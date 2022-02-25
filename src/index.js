@@ -8,6 +8,7 @@ dotenv.config();
 
 app.use(cors());
 app.use(json());
+
 app.use(router);
 
 app.listen(process.env.PORT, () => {
