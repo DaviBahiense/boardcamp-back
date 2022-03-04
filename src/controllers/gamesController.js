@@ -41,7 +41,7 @@ export async function postGames (req, res) {
             return res.sendStatus(400)
         }
 
-         const searchSameGame = await connection.query(`
+        const searchSameGame = await connection.query(`
         SELECT games.name FROM games 
         WHERE games.name like $1  
          `,[name])
