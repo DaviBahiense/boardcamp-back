@@ -8,6 +8,5 @@ const gameSchema = joi.object({
     pricePerDay: joi.number().required()
 })
 
-/* .regex(/https?:\/\//g) */
 
 export default gameSchema

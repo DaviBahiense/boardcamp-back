@@ -12,9 +12,13 @@ export async function getGames (req, res) {
             const toFilter = req.query.name.toLowerCase()
             
             const filterGames = await connection.query(`
-                SELECT games.id, games.name, games.image, games."stockTotal", games."categoryId", games."pricePerDay", categories.name AS "categoryName" FROM games
-                JOIN categories ON
-                games."categoryId"=categories.id 
+                SELECT games.id, games.name, 
+                    games.image, games."stockTotal",
+                    games."categoryId", games."pricePerDay", 
+                    categories.name AS "categoryName" 
+                FROM games
+                    JOIN categories ON
+                    games."categoryId"=categories.id 
                 WHERE LOWER(games.name) like $1
             `,[toFilter+'%'])
 
