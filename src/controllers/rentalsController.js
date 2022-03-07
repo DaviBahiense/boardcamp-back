@@ -1,4 +1,5 @@
 import connection from '../database.js'
+import dayjs from 'dayjs'
 
 export async function getRentals (req, res) {
     
@@ -103,3 +104,50 @@ export async function insertRental(req, res) {
         res.sendStatus(500);
     } 
 }
+
+export async function finaliseRental(req, res) {
+    const { id } = req.params
+
+    try {
+        const idExist = await connection.query('SELECT * FROM rentals WHERE rentals.id=$1',[id])
+        const finalise = await connection.query('SELECT rentals."returnDate" FROM rentals WHERE rentals.id=$1',[id])
+
+        if (!idExist.rows[0] || !finalise.rows[0]) {
+            return res.sendStatus(400)
+        }
+        if (finalise.rows[0]) {
+            if (finalise.rows[0].returnDate !== null) {
+                return res.sendStatus(400)
+            }
+        }
+
+        const info = await connection.query(`
+        SELECT rentals."rentDate", rentals."daysRented", rentals."originalPrice" 
+        FROM rentals 
+        WHERE rentals.id=$1`
+        ,[id])
+        const originalPrice = info.rows[0].originalPrice
+        const rentDate = dayjs(info.rows[0].rentDate.toISOString().slice(0,10)).format('YYYY/MM/DD')
+        const daysRented = info.rows[0].daysRented
+        const difDays = dayjs().diff(dayjs(rentDate), 'day')
+        let tax = null
+        
+        if (difDays > daysRented) {
+            tax = (difDays - daysRented) * (originalPrice / daysRented)
+        }
+
+        await connection.query(`
+            UPDATE rentals
+            SET "returnDate"=$1, "delayFee"=$2
+            WHERE rentals.id=$3
+        `,[dayjs().format('YYYY/MM/DD'), tax, id]) 
+
+        res.sendStatus(200)
+    } catch (error) {
+        console.error(error);
+        res.sendStatus(500);
+    }
+
+}
+
+
