@@ -17,7 +17,7 @@ export async function getRentals (req, res) {
         `,
         rowMode: 'array'
         })    
-        console.log(rentalsRow.rows)
+
         const rentals = rentalsRow.rows.map(row => {
             const [id, customerId, gameId, rentDate, daysRented,  
                 returnDate, originalPrice, delayFee, 
@@ -42,7 +42,6 @@ export async function getRentals (req, res) {
         })
         
         if (req.query.gameId) { 
-            console.log("game")
          return res.send(rentals.filter(item =>req.query.gameId.includes(item.gameId)))
         }
         if (req.query.customerId) { 
@@ -112,8 +111,8 @@ export async function finaliseRental(req, res) {
         const idExist = await connection.query('SELECT * FROM rentals WHERE rentals.id=$1',[id])
         const finalise = await connection.query('SELECT rentals."returnDate" FROM rentals WHERE rentals.id=$1',[id])
 
-        if (!idExist.rows[0] || !finalise.rows[0]) {
-            return res.sendStatus(400)
+        if (!idExist.rows[0]) {
+            return res.sendStatus(404)
         }
         if (finalise.rows[0]) {
             if (finalise.rows[0].returnDate !== null) {
@@ -150,4 +149,31 @@ export async function finaliseRental(req, res) {
 
 }
 
+export async function deleteRental(req, res) {
+    const { id } = req.params
 
+    try {
+        const idExist = await connection.query('SELECT * FROM rentals WHERE rentals.id=$1',[id])
+        const finalise = await connection.query('SELECT rentals."returnDate" FROM rentals WHERE rentals.id=$1',[id])
+
+        if (!idExist.rows[0]) {
+            return res.sendStatus(404)
+        }
+        if (finalise.rows[0]) {
+            if (finalise.rows[0].returnDate !== null) {
+                return res.sendStatus(400)
+            }
+        }
+
+        await connection.query(`
+        DELETE FROM rentals
+        WHERE rentals.id=$1
+        `,[id])
+
+        res.sendStatus(200)
+        
+    } catch (error) {
+        console.error(error);
+        res.sendStatus(500);
+    }
+}
